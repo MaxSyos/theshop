@@ -1,5 +1,5 @@
 import type { NextPage } from "next";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useDispatch } from "react-redux";
 import { useProducts } from "../hooks/useProducts";
@@ -13,11 +13,13 @@ const Offers = dynamic(() => import("../components/Offers/Offers"));
 const Category = dynamic(() => import("../components/category/Category"));
 const Newest = dynamic(() => import("../components/newest/Newest"));
 const Brands = dynamic(() => import("../components/brands"));
-const Banners = dynamic(() => import("../components/banners"), { ssr: false });
+import Banner from "../components/banners";
+import { client as sanityClient } from "../lib/sanityClient";
 
-const Home: NextPage = () => {
+const Home: NextPage = (props: any) => {
   const dispatch = useDispatch();
   const { products, newestProducts, loadProducts, loadNewestProducts } = useProducts();
+  const [bannerContent, setBannerContent] = useState(props.bannerContent || []);
 
   useEffect(() => {
     // Carrega todos os produtos para ofertas
@@ -45,17 +47,38 @@ const Home: NextPage = () => {
     }
   }, [dispatch, newestProducts]);
 
+  useEffect(() => {
+    // Busca banners do Sanity client-side
+    sanityClient.fetch(`*[_type == "banner"]{
+      title,
+      description,
+      buttonText,
+      imgSrc,
+      imgWidth,
+      imgHeight,
+      numberOfDiscountDate,
+      href
+    }`).then((data) => {
+      setBannerContent(
+        data.map((b: any) => ({
+          ...b,
+          imgSrc: b.imgSrc && b.imgSrc.asset ? b.imgSrc.asset.url : "",
+        }))
+      );
+    });
+  }, []);
+
   return (
-    <div>
-      <Carousel />
+    <>
+      <Banner bannerContent={bannerContent} />
       <Benefits />
+      <Carousel />
       <Offers />
       <Category />
       <Newest />
-      <Banners />
       <Brands />
-    </div>
+    </>
   );
-};
+}
 
 export default Home;

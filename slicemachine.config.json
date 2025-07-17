@@ -1,0 +1,5 @@
+{
+  "repositoryName": "aasshop",
+  "adapter": "@slicemachine/adapter-next",
+  "libraries": ["./slices"]
+}
